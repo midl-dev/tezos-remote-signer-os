@@ -1,7 +1,9 @@
-Tezos Remote signer
--------------------
+Tezos Remote signer OS
+----------------------
 
 This is an ansible manifest to turn a Raspberry Pi with Raspbian OS into a remote signer for the Tezos peer-to-peer cryptocurrency.
+
+The remote signer is connected to a Ledger Nano S running the [Tezos Baking app](https://github.com/obsidiansystems/ledger-app-tezos).
 
 You need a Raspberry Pi 3 or 4.
 
