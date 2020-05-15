@@ -13,6 +13,15 @@ You also need a USB 4G Dongle to protect against losses of wired Internet. We ha
 
 In the US, a Google Fi subscription comes in handy as they will ship you up to 10 SIM cards at no cost, which is perfect for this purpose.
 
+Features
+========
+
+* ssh tunneling of remote signer http endpoint
+* autossh for automatically reestblishing ssh connection
+* system daemons for automatically starting the signer at boot time
+* firewalld rules to allow just the needed inbound connections
+* interfaces well with [tezos-remote-signer-forwarder](https://github.com/midl-dev/tezos-on-gke/tree/master/docker/tezos-remote-signer-forwarder) from [Tezos-on-GKE](https://github.com/midl-dev/tezos-on-gke/tree/master/docker/tezos-remote-signer-forwarder) project.
+
 Installation
 ============
 
