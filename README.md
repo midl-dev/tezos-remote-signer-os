@@ -13,6 +13,13 @@ You also need a USB 4G Dongle to protect against losses of wired Internet. We ha
 
 In the US, a Google Fi subscription comes in handy as they will ship you up to 10 SIM cards at no cost, which is perfect for this purpose.
 
+Brought to you by MIDL.dev
+--------------------------
+
+![MIDL.dev](midl-dev-logo.png)
+
+We can deploy and manage a remote signer connected to a complete Tezos baking infrastructure for you. [Hire us](https://midl.dev).
+
 Features
 ========
 
