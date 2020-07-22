@@ -100,7 +100,7 @@
 
 - name: download opam
   get_url:
-    url: https://github.com/ocaml/opam/releases/download/2.0.4/opam-2.0.4-armhf-linux
+    url: https://github.com/ocaml/opam/releases/download/2.0.7/opam-2.0.7-armhf-linux
     dest: /usr/local/bin/opam
     mode: '0755'
 
@@ -120,6 +120,7 @@
     - libgmp-dev
     - m4
     - autossh
+    - cargo
 
 # 3 actions below are from https://blog.sleeplessbeastie.eu/2018/12/31/how-to-disable-onboard-wifi-and-bluetooth-on-raspberry-pi-3/
 - name: disable bluetooth , WARNING needs reboot
@@ -175,12 +176,11 @@
     state: started
     enabled: yes
 
-- name: add authorized key for ledger prober with special script
-  authorized_key:
-    user: tezos
-    state: present
-    key: "{{ ledger_prober_pubkey }}"
-    key_options: 'no-port-forwarding,command="/home/tezos/tezos/tezos-client -p {{ protocol_short }} get ledger authorized path for ledger_tezos"'
+- name: start ledger tester script
+  systemd:
+    name: test-ledger
+    state: started
+    enabled: yes
 
 - name: start remote signer
   systemd:

@@ -5,9 +5,9 @@ This is an ansible manifest to turn a Raspberry Pi with Raspbian OS into a remot
 
 The remote signer is connected to a Ledger Nano S running the [Tezos Baking app](https://github.com/obsidiansystems/ledger-app-tezos).
 
-You need a Raspberry Pi 3 or 4.
+You need a Raspberry Pi 4 (we have seen problems with Ledger USB disconnects with Raspberry Pi 3).
 
-To protect against power failures, you need a Uninterruptible Power Supply hat. We had good results with the [Geekworm x700](https://geekworm.com/products/rapberry-pi-ups-hat-safe-shutdown-shield-x700-power-management-board).
+To protect against power failures, you need a Uninterruptible Power Supply hat. We had good results with the [Geekworm x728](https://geekworm.com/products/raspberry-pi-x728-max-5-1v-8a-18650-ups-power-management-board).
 
 You also need a USB 4G Dongle to protect against losses of wired Internet. We had good results with the [Huawei E3372](https://www.amazon.com/Huawei-E3372h-153-Unlocked-Europe-Middle/dp/B01N6P3HI2).
 
@@ -16,7 +16,7 @@ In the US, a Google Fi subscription comes in handy as they will ship you up to 1
 Brought to you by MIDL.dev
 --------------------------
 
-![MIDL.dev](midl-dev-logo.png)
+<img src="midl-dev-logo.png" alt="MIDL.dev" height="100"/>
 
 We can deploy and manage a remote signer connected to a complete Tezos baking infrastructure for you. [Hire us](https://midl.dev).
 
@@ -32,7 +32,7 @@ Features
 Installation
 ============
 
-First, install [Raspbian](https://www.raspberrypi.org/downloads/raspbian/) with ssh access enabled. To enable ssh access, add a file named `ssh` to the boot partition.
+First, install [Raspberry Pi OS](https://www.raspberrypi.org/downloads/raspberry-pi-os/) with ssh access enabled. To enable ssh access, add a file named `ssh` to the boot partition.
 
 The default credentials will be `pi`/`raspberry`.
 
@@ -41,14 +41,13 @@ You also need
 * a Linux environment with ansible installed
 * a ssh public/private keypair in your home direcroty `~/.ssh` folder
 
-In the `remote-signer` directory, edit the `inventory` file to set the ip address of your Pi.
+Edit the `inventory` file to set the ip address of your Pi.
 
 Edit the tezos-remote-signer.yaml with the required parameters.
 
 Run the ansible fully automated install:
 
 ```
-cd remote-signer
 ansible-playbook tezos-remote-signer.yaml --inventory-file inventory
 ```
 
