@@ -7,7 +7,7 @@ Wants           = network-online.target
 After           = network-online.target
 
 [Service]
-ExecStart       = /usr/bin/testLedger.py
+ExecStart       = /usr/bin/testSigner.py
 Restart         = on-failure
 
 [Install]
