@@ -7,9 +7,11 @@
 CHECK_DELAY=${CHECK_DELAY:-5}
 CHECK_IP=${CHECK_IP:-8.8.8.8}
 PRIMARY_IF=${PRIMARY_IF:-eth0}
-PRIMARY_GW=${PRIMARY_GW:-1.2.3.4}
 BACKUP_IF=${BACKUP_IF:-eth1}
-BACKUP_GW=${BACKUP_GW:-2.3.4.5}
+
+# read gateway data from ip command
+read _ _ PRIMARY_GW _ < <( ip -4 route list type unicast dev $PRIMARY_IF exact 0/0)
+read _ _ BACKUP_GW _ < <( ip -4 route list type unicast dev $BACKUP_IF exact 0/0)
 
 set_def_route_to_primary() {
   ip r d default via "$PRIMARY_GW" dev "$PRIMARY_IF"
