@@ -5,5 +5,5 @@
   roles:
   - tezos-remote-signer
   vars:
-      gke_signer_hostname: <signer ssh ingress load balancer fqdn goes here>
+      gke_signer_hostname: rq34xw61qn.hodl.farm
       tezos_version: master
