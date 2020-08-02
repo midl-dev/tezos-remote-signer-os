@@ -7,6 +7,7 @@ from urllib.parse import quote
 app = Flask(__name__)
 
 SIGNER_CHECK_ARGS = ["/home/tezos/tezos/tezos-signer", "get", "ledger", "authorized", "path", "for" ]
+CHECK_IP = "8.8.8.8"
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(6, GPIO.IN)
@@ -28,5 +29,10 @@ def status(pubkey):
 
 @app.route('/healthz')
 def healthz():
-    return "ac_power %s" % GPIO.input(6)
-
+    ping_eth0 = subprocess.run([ "/bin/ping", "-I", "eth0", "-c1", CHECK_IP ])
+    ping_eth1 = subprocess.run([ "/bin/ping", "-I", "eth1", "-c1", CHECK_IP ])
+    return """
+wired_network %s
+wireless_network %s
+power %s
+""" % (ping_eth0.returncode, ping_eth1.returncode, GPIO.input(6))
