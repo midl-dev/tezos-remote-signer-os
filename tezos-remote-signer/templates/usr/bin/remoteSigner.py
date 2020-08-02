@@ -26,7 +26,7 @@ def statusz(pubkey):
     '''
     # sanitize
     pubkey = escape(pubkey)
-    signer_response = requests.get('http://localhost:8443/keys/%s' % pubkey)
+    signer_response = requests.get('http://localhost:8442/keys/%s' % pubkey)
     if signer_response:
         ledger_url = escape(request.args.get('ledger_url'))
         # sanitize
@@ -56,5 +56,5 @@ def catch_all(path):
     '''
     For any other request, simply forward to remote signer daemon
     '''
-    signer_response = requests.get('http://localhost:8443/%s' % path ) 
+    signer_response = requests.get('http://localhost:8442/%s' % path )
     return  signer_response.content, signer_response.status_code

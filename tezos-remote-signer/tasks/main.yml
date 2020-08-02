@@ -176,9 +176,9 @@
     state: started
     enabled: yes
 
-- name: start ledger tester script
+- name: start tezos signer wrapper
   systemd:
-    name: test-ledger
+    name: tezos-signer-wrapper
     state: started
     enabled: yes
 
