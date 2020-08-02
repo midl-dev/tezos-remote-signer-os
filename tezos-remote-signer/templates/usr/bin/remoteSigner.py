@@ -13,7 +13,17 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(6, GPIO.IN)
 
 @app.route('/statusz/<pubkey>')
-def status(pubkey):
+def statusz(pubkey):
+    '''
+    Status of the remote signer
+    Checks:
+    * whether signer daemon is up
+    * whether signer daemon knows about the key passed as parameter
+    * whether ledger is connected and unlocked
+    * whether ledger baking app is on
+    * whether baking app is configured to bake for URL passed as parameter
+    Returns 200 iif all confitions above are met.
+    '''
     # sanitize
     pubkey = escape(pubkey)
     signer_response = requests.get('http://localhost:8443/keys/%s' % pubkey)
@@ -29,10 +39,22 @@ def status(pubkey):
 
 @app.route('/healthz')
 def healthz():
+    '''
+    Health metrics
+    '''
     ping_eth0 = subprocess.run([ "/bin/ping", "-I", "eth0", "-c1", CHECK_IP ])
     ping_eth1 = subprocess.run([ "/bin/ping", "-I", "eth1", "-c1", CHECK_IP ])
-    return """
-wired_network %s
+    return """wired_network %s
 wireless_network %s
 power %s
 """ % (ping_eth0.returncode, ping_eth1.returncode, GPIO.input(6))
+
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    '''
+    For any other request, simply forward to remote signer daemon
+    '''
+    signer_response = requests.get('http://localhost:8443/%s' % path ) 
+    return  signer_response.content, signer_response.status_code
