@@ -1,8 +1,9 @@
 # Copyright 2020 MIDL.dev
 
-from flask import Flask, request
+from flask import Flask, jsonify, request
 from markupsafe import escape
 import subprocess
+import json
 import requests
 import RPi.GPIO as GPIO
 from urllib.parse import quote
@@ -57,7 +58,7 @@ wireless_network %s
 # TYPE power gauge
 power %s
 %s
-""" % (ping_eth0.returncode, ping_eth1.returncode, GPIO.input(6), strnode_exporter_metrics)
+""" % (ping_eth0.returncode, ping_eth1.returncode, GPIO.input(6), node_exporter_metrics)
 
 
 @app.route('/', defaults={'path': ''})
@@ -67,4 +68,5 @@ def catch_all(path):
     For any other request, simply forward to remote signer daemon
     '''
     signer_response = requests.get('http://localhost:8442/%s' % path )
-    return  signer_response.content, signer_response.status_code
+    return  jsonify(json.loads(signer_response.content)), signer_response.status_code
+
