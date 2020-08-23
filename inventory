@@ -1,5 +1,5 @@
 [tezos-remote-signer]
-192.168.10.101 remote_signer_port=18443
+<insert here remote signer ip> remote_signer_port=<insert here remote signer forwarder port>
 
 [tezos-remote-signer:vars]
 #ansible_ssh_user=pi
