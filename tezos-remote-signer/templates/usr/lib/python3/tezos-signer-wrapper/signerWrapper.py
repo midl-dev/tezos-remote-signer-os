@@ -11,6 +11,7 @@ app = Flask(__name__)
 
 SIGNER_CHECK_ARGS = ["/home/tezos/tezos/tezos-signer", "get", "ledger", "authorized", "path", "for" ]
 CHECK_IP = "8.8.8.8"
+LOCAL_SIGNER_PORT="8442"
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(6, GPIO.IN)
@@ -29,7 +30,7 @@ def statusz(pubkey):
     '''
     # sanitize
     pubkey = escape(pubkey)
-    signer_response = requests.get('http://localhost:8442/keys/%s' % pubkey)
+    signer_response = requests.get('http://localhost:%s/keys/%s' % (LOCAL_SIGNER_PORT, pubkey))
     if signer_response:
         ledger_url = escape(request.args.get('ledger_url'))
         # sanitize
@@ -45,8 +46,8 @@ def healthz():
     '''
     Health metrics
     '''
-    ping_eth0 = subprocess.run([ "/bin/ping", "-I", "eth0", "-c1", CHECK_IP ])
-    ping_eth1 = subprocess.run([ "/bin/ping", "-I", "eth1", "-c1", CHECK_IP ])
+    ping_eth0 = subprocess.run([ "/bin/ping", "-I", "eth0", "-c1", CHECK_IP ], stdout=FNULL)
+    ping_eth1 = subprocess.run([ "/bin/ping", "-I", "eth1", "-c1", CHECK_IP ], stdout=FNULL)
     node_exporter_metrics = requests.get('http://localhost:9100/metrics').content.decode("utf-8")
     return """# HELP wired_network Status of the wired network. 0 if it can ping google. 1 if it cannot.
 # TYPE wired_network gauge
@@ -61,12 +62,15 @@ power %s
 """ % (ping_eth0.returncode, ping_eth1.returncode, GPIO.input(6), node_exporter_metrics)
 
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
+@app.route('/', methods=['GET', 'POST'], defaults={'path': ''})
+@app.route('/<path:path>', methods=['GET', 'POST'])
 def catch_all(path):
     '''
     For any other request, simply forward to remote signer daemon
     '''
-    signer_response = requests.get('http://localhost:8442/%s' % path )
+    if request.method == 'POST':
+        signer_response = requests.post('http://localhost:%s/%s' % (LOCAL_SIGNER_PORT, path), json.dumps(request.json))
+    else:
+        signer_response = requests.get('http://localhost:%s/%s' % (LOCAL_SIGNER_PORT, path) )
     return  jsonify(json.loads(signer_response.content)), signer_response.status_code
 
