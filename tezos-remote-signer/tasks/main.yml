@@ -1,6 +1,7 @@
 ---
 # tasks file for tezos-remote-signer
 #
+
 - name: Make sure we have a 'wheel' group
   group:
     name: wheel
@@ -121,6 +122,8 @@
     - m4
     - autossh
     - cargo
+    - python3-flask
+    - gunicorn3
 
 # 3 actions below are from https://blog.sleeplessbeastie.eu/2018/12/31/how-to-disable-onboard-wifi-and-bluetooth-on-raspberry-pi-3/
 - name: disable bluetooth , WARNING needs reboot
@@ -176,9 +179,9 @@
     state: started
     enabled: yes
 
-- name: start ledger tester script
+- name: start tezos signer wrapper
   systemd:
-    name: test-ledger
+    name: tezos-signer-wrapper
     state: started
     enabled: yes
 

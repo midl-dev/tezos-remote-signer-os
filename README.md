@@ -45,6 +45,12 @@ Edit the `inventory` file to set the ip address of your Pi.
 
 Edit the tezos-remote-signer.yaml with the required parameters.
 
+Download the ansible dependencies:
+
+```
+ansible-galaxy install -r requirements.yaml
+```
+
 Run the ansible fully automated install:
 
 ```

@@ -1,0 +1,14 @@
+# The Tezos Signer wrapper service (part of systemd)
+
+[Unit]
+Description     = Tezos Signer Wrapper Service to add intrumented endpoints
+Wants           = network-online.target
+After           = network-online.target
+
+[Service]
+WorkingDirectory= /usr/lib/python3/tezos-signer-wrapper
+ExecStart       = gunicorn3 --bind 0.0.0.0:8443 --threads 2 wsgi:app
+Restart         = on-failure
+
+[Install]
+WantedBy        = multi-user.target

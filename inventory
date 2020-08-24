@@ -1,6 +1,5 @@
 [tezos-remote-signer]
-192.168.1.21 remote_signer_port=8443
-192.168.1.22 remote_signer_port=8444
+<insert here remote signer ip> remote_signer_port=<insert here remote signer forwarder port>
 
 [tezos-remote-signer:vars]
 #ansible_ssh_user=pi
@@ -8,5 +7,3 @@
 ansible_ssh_user=tezos
 ansible_sudo=yes
 ansible_ssh_common_args='-o StrictHostKeyChecking=no  -o UserKnownHostsFile=/dev/null'
-
-

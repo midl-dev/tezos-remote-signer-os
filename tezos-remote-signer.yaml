@@ -4,6 +4,7 @@
   become: true
   roles:
   - tezos-remote-signer
+  - ansible-node-exporter
   vars:
-      gke_signer_hostname: rq34xw61qn.hodl.farm
+      gke_signer_hostname: <insert here hostname of remote signer ssh endpoint>
       tezos_version: master
