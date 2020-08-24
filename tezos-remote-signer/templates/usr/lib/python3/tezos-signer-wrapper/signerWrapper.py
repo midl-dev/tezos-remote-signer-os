@@ -18,6 +18,21 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(6, GPIO.IN)
 FNULL = open(os.devnull, 'w')
 
+# Bug in gunicorn/wsgi. The tezos signer uses chunked encoding which is not handled properly
+# unless you do this.
+# https://github.com/benoitc/gunicorn/issues/1733#issuecomment-377000612
+@app.before_request
+def handle_chunking():
+    """
+    Sets the "wsgi.input_terminated" environment flag, thus enabling
+    Werkzeug to pass chunked requests as streams.  The gunicorn server
+    should set this, but it's not yet been implemented.
+    """
+
+    transfer_encoding = request.headers.get("Transfer-Encoding", None)
+    if transfer_encoding == u"chunked":
+        request.environ["wsgi.input_terminated"] = True
+
 @app.route('/statusz/<pubkey>')
 def statusz(pubkey):
     '''
