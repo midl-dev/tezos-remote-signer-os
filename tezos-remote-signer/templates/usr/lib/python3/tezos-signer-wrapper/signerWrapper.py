@@ -3,6 +3,7 @@
 from flask import Flask, jsonify, request
 from markupsafe import escape
 import subprocess
+import os
 import json
 import requests
 import RPi.GPIO as GPIO
@@ -15,6 +16,7 @@ LOCAL_SIGNER_PORT="8442"
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(6, GPIO.IN)
+FNULL = open(os.devnull, 'w')
 
 @app.route('/statusz/<pubkey>')
 def statusz(pubkey):
