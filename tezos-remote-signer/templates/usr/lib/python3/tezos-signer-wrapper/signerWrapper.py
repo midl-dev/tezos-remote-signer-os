@@ -3,6 +3,7 @@
 from flask import Flask, jsonify, request
 from markupsafe import escape
 import subprocess
+from multiprocessing import Lock
 import os
 import json
 import requests
@@ -17,6 +18,8 @@ LOCAL_SIGNER_PORT="8442"
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(6, GPIO.IN)
 FNULL = open(os.devnull, 'w')
+
+lock = Lock()
 
 # Bug in gunicorn/wsgi. The tezos signer uses chunked encoding which is not handled properly
 # unless you do this.
@@ -44,19 +47,25 @@ def statusz(pubkey):
     * whether ledger baking app is on
     * whether baking app is configured to bake for URL passed as parameter
     Returns 200 iif all confitions above are met.
+
+    This request locks the daemon, because it interacts with the ledger.
+    If it's running, we wait for it to complete before we sign anything.
+    Otherwise, signature may fail.
     '''
-    # sanitize
-    pubkey = escape(pubkey)
-    signer_response = requests.get('http://localhost:%s/keys/%s' % (LOCAL_SIGNER_PORT, pubkey))
-    if signer_response:
-        ledger_url = escape(request.args.get('ledger_url'))
+    with lock:
         # sanitize
-        # https://stackoverflow.com/questions/55613607/how-to-sanitize-url-string-in-python
-        ledger_url = quote(ledger_url, safe='/:?&')
-        ledger_response = subprocess.run(SIGNER_CHECK_ARGS + [ ledger_url ], capture_output=True)
-        return signer_response.content + ledger_response.stdout + ledger_response.stderr, 200 if ledger_response.returncode == 0 else 500
-    else:
-        return signer_response.content, signer_response.status_code
+        pubkey = escape(pubkey)
+        signer_response = requests.get('http://localhost:%s/keys/%s' % (LOCAL_SIGNER_PORT, pubkey))
+        if signer_response:
+            ledger_url = escape(request.args.get('ledger_url'))
+            # sanitize
+            # https://stackoverflow.com/questions/55613607/how-to-sanitize-url-string-in-python
+            ledger_url = quote(ledger_url, safe='/:?&')
+            ledger_response = subprocess.run(SIGNER_CHECK_ARGS + [ ledger_url ], capture_output=True)
+            return_data = signer_response.content + ledger_response.stdout + ledger_response.stderr, 200 if ledger_response.returncode == 0 else 500
+        else:
+            return_data = signer_response.content, signer_response.status_code
+    return return_data
 
 @app.route('/healthz')
 def healthz():
@@ -78,12 +87,22 @@ power %s
 %s
 """ % (ping_eth0.returncode, ping_eth1.returncode, GPIO.input(6), node_exporter_metrics)
 
+@app.route('/keys/<pubkey>', methods=['POST'])
+def sign(pubkey):
+    '''
+    This request locks the daemon, because it uses Ledger to sign.
+    Healthcheck also uses ledger, and ledger doesn't multiplex.
+    '''
+    with lock:
+        signer_response = requests.post('http://localhost:%s/%s' % (LOCAL_SIGNER_PORT, path), json.dumps(request.json))
+    return  jsonify(json.loads(signer_response.content)), signer_response.status_code
 
 @app.route('/', methods=['GET', 'POST'], defaults={'path': ''})
 @app.route('/<path:path>', methods=['GET', 'POST'])
 def catch_all(path):
     '''
     For any other request, simply forward to remote signer daemon
+    Future proof.
     '''
     if request.method == 'POST':
         signer_response = requests.post('http://localhost:%s/%s' % (LOCAL_SIGNER_PORT, path), json.dumps(request.json))

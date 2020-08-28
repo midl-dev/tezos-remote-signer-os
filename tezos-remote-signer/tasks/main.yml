@@ -124,6 +124,7 @@
     - cargo
     - python3-flask
     - gunicorn3
+    - python3-rpi.gpio
 
 # 3 actions below are from https://blog.sleeplessbeastie.eu/2018/12/31/how-to-disable-onboard-wifi-and-bluetooth-on-raspberry-pi-3/
 - name: disable bluetooth , WARNING needs reboot
@@ -164,6 +165,12 @@
 - name: systemd reload the config files
   systemd:
     daemon_reload: yes
+
+- name: create tezos-signer-wrapper directory
+  file:
+    path: /usr/lib/python3/tezos-signer-wrapper
+    state: directory
+    mode: '0644'
 
 - name: copy all files from templates
   template:
