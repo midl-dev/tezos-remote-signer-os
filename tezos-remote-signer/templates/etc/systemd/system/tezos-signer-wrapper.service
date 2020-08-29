@@ -7,7 +7,8 @@ After           = network-online.target
 
 [Service]
 WorkingDirectory= /usr/lib/python3/tezos-signer-wrapper
-ExecStart       = gunicorn3 --bind 0.0.0.0:8443 --threads 2 wsgi:app
+# --preload allows to share the Ledger lock between threads
+ExecStart       = gunicorn3 --bind 0.0.0.0:8443 --threads 2 --preload wsgi:app
 Restart         = on-failure
 
 [Install]

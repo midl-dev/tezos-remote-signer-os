@@ -94,7 +94,7 @@ def sign(pubkey):
     Healthcheck also uses ledger, and ledger doesn't multiplex.
     '''
     with lock:
-        signer_response = requests.post('http://localhost:%s/%s' % (LOCAL_SIGNER_PORT, path), json.dumps(request.json))
+        signer_response = requests.post('http://localhost:%s/keys/%s' % (LOCAL_SIGNER_PORT, pubkey), json.dumps(request.json))
     return  jsonify(json.loads(signer_response.content)), signer_response.status_code
 
 @app.route('/', methods=['GET', 'POST'], defaults={'path': ''})
