@@ -9,11 +9,10 @@ CHECK_IP=${CHECK_IP:-8.8.8.8}
 PRIMARY_IF=${PRIMARY_IF:-eth0}
 BACKUP_IF=${BACKUP_IF:-eth1}
 
-# read gateway data from ip command
-read _ _ PRIMARY_GW _ < <( ip -4 route list type unicast dev $PRIMARY_IF exact 0/0)
-read _ _ BACKUP_GW _ < <( ip -4 route list type unicast dev $BACKUP_IF exact 0/0)
-
 set_def_route_to_primary() {
+  # read gateway data from ip command
+  read _ _ PRIMARY_GW _ < <( ip -4 route list type unicast dev $PRIMARY_IF exact 0/0)
+  read _ _ BACKUP_GW _ < <( ip -4 route list type unicast dev $BACKUP_IF exact 0/0)
   ip r d default via "$PRIMARY_GW" dev "$PRIMARY_IF"
   ip r d default via "$BACKUP_GW" dev "$BACKUP_IF"
   ip r a default via "$PRIMARY_GW" dev "$PRIMARY_IF" metric 100
@@ -21,6 +20,9 @@ set_def_route_to_primary() {
 }
 
 set_def_route_to_secondary() {
+  # read gateway data from ip command
+  read _ _ PRIMARY_GW _ < <( ip -4 route list type unicast dev $PRIMARY_IF exact 0/0)
+  read _ _ BACKUP_GW _ < <( ip -4 route list type unicast dev $BACKUP_IF exact 0/0)
   ip r d default via "$PRIMARY_GW" dev "$PRIMARY_IF"
   ip r d default via "$BACKUP_GW" dev "$BACKUP_IF"
   ip r a default via "$PRIMARY_GW" dev "$PRIMARY_IF" metric 200
