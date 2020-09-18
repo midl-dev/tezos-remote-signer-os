@@ -59,7 +59,7 @@ def statusz(pubkey):
         if signer_response:
             with open("/home/tezos/.tezos-signer/secret_keys") as json_file:
                 signer_data = json.load(json_file)
-            if data[0]["value"] != ledger_url:
+            if signer_data[0]["value"] != ledger_url:
                 return "Misconfigured signer", 500
             ledger_url = escape(request.args.get('ledger_url'))
             # sanitize
