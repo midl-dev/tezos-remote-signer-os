@@ -57,15 +57,16 @@ def statusz(pubkey):
         pubkey = escape(pubkey)
         signer_response = requests.get('http://localhost:%s/keys/%s' % (LOCAL_SIGNER_PORT, pubkey))
         if signer_response:
-            with open("/home/tezos/.tezos-signer/secret_keys") as json_file:
-                signer_data = json.load(json_file)
-            if signer_data[0]["value"] != ledger_url:
-                return "Misconfigured signer", 500
             ledger_url = escape(request.args.get('ledger_url'))
             # sanitize
             # https://stackoverflow.com/questions/55613607/how-to-sanitize-url-string-in-python
             ledger_url = quote(ledger_url, safe='/:?&')
-            ledger_response = subprocess.run(SIGNER_CHECK_ARGS + [ ledger_url ], capture_output=True)
+            with open("/home/tezos/.tezos-signer/secret_keys") as json_file:
+                signer_data = json.load(json_file)
+            signer_conf =  next((item for item in signer_data if item["name"] == "ledger_tezos"))
+            if not signer_conf or signer_conf["value"] != ledger_url:
+                return "Misconfigured signer", 500
+            ledger_response = subprocess.run(SIGNER_CHECK_ARGS + [ ledger_url ], timeout=10, capture_output=True)
             return_data = signer_response.content + ledger_response.stdout + ledger_response.stderr, 200 if ledger_response.returncode == 0 else 500
         else:
             return_data = signer_response.content, signer_response.status_code
