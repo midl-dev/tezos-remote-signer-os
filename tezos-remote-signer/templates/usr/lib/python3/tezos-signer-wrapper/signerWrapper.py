@@ -77,8 +77,8 @@ def healthz():
     '''
     Health metrics
     '''
-    ping_eth0 = subprocess.run([ "/bin/ping", "-I", "eth0", "-c1", CHECK_IP ], stdout=FNULL)
-    ping_eth1 = subprocess.run([ "/bin/ping", "-I", "eth1", "-c1", CHECK_IP ], stdout=FNULL)
+    ping_eth0 = subprocess.run([ "/bin/ping", "-I", "eth0", "-c1", CHECK_IP ], timeout=10, stdout=FNULL)
+    ping_eth1 = subprocess.run([ "/bin/ping", "-I", "eth1", "-c1", CHECK_IP ], timeout=10, stdout=FNULL)
     node_exporter_metrics = requests.get('http://localhost:9100/metrics').content.decode("utf-8")
     return """# HELP wired_network Status of the wired network. 0 if it can ping google. 1 if it cannot.
 # TYPE wired_network gauge
