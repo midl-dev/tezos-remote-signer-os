@@ -75,6 +75,7 @@
     packages:
     - vim
     - ufw
+    - jq
 
 - name: Configure ufw defaults
   ufw: direction={{ item.direction }} policy={{ item.policy }}
