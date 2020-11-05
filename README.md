@@ -144,3 +144,55 @@ Finally you need to set the ledger to bake for this key:
 ```
 
 Again you need to approve using the Ledger button.
+
+Active services
+===============
+
+After setup is complete, check that all services are running:
+
+```
+service tezos-signer-forwarder status
+service tezos-signer-wrapper status
+service tezos-signer status
+service isp-failover status
+```
+
+### Tezos-signer-forwarder
+
+This service runs autossh to forward the signer port to a remote location. It also forwards the ssh port (so you can ssh to your signer remotely).
+
+The remote location must run sshd.
+
+### Tezos-signer-wrapper
+
+This is a gunicorn server used as a wrapper around the tezos baker. It forwards most requests to the baker, but it also does these things:
+
+* exposes a `healthz` endpoint with prometheus node exporter metrics, as well as special metrics related to the auxiliary LTE connection and the UPS hat
+* verifies that the signer address is configured properly (key import commands have been run succesfully)
+* exposes a `statusz` endpoint (see load balancing section below)
+
+NOTE: if you are not using a UPS hat or LTE dongle, you may have to modify this script
+
+NOTE: you can also bypass the wrapper script entirely and just forward the signer endpoint by modifying /etc/systemd/system/tezos-signer-forwarder.service to forward port 8442 instead of 8443
+
+### Tezos-signer
+
+The native `tezos-signer` daemon.
+
+### isp-failover
+
+A script that continuously pings the Internet from 2 interfaces and changes the default route when one is down. If you do not have an auxiliary internet connection, you may disable it.
+
+Load balancing
+==============
+
+You may set up a load balancer and monitor the following status endpoint:
+
+```
+http://<signer_ip>:<signer_port>/statusz/<public key hash starting with tz...>?ledger_url=<encoded URI of the ledger url>
+```
+
+This endpoint will return 200 OK if and only if:
+
+*the signer daemon is running and has the baker's public key has configured
+* the Ledger is connected, baking app is open and configured to bake at the given URL.
