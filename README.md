@@ -194,5 +194,5 @@ http://<signer_ip>:<signer_port>/statusz/<public key hash starting with tz...>?l
 
 This endpoint will return 200 OK if and only if:
 
-*the signer daemon is running and has the baker's public key has configured
+* the signer daemon is running and has the baker's public key has configured
 * the Ledger is connected, baking app is open and configured to bake at the given URL.

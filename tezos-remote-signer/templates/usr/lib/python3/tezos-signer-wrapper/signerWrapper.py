@@ -65,7 +65,9 @@ def statusz(pubkey):
                 signer_data = json.load(json_file)
             signer_conf =  next((item for item in signer_data if item["name"] == "ledger_tezos"))
             if not signer_conf or signer_conf["value"] != ledger_url:
-                return "Misconfigured signer", 500
+                print("The Ledger url configured in ~/.tezos-signer does not match the one configured on the cloud")
+                print(f"Value found in ~/.tezos-signer: {signer_conf['value']}, value found in LB request URL: {ledger_url}")
+                return "Ledger URL mismatch, check tezos-signer-forwarder logs on signer", 500
             ledger_response = subprocess.run(SIGNER_CHECK_ARGS + [ ledger_url ], timeout=10, capture_output=True)
             return_data = signer_response.content + ledger_response.stdout + ledger_response.stderr, 200 if ledger_response.returncode == 0 else 500
         else:
