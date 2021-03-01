@@ -1,5 +1,5 @@
 [tezos-remote-signer]
-<insert here remote signer ip> remote_signer_port=<insert here remote signer forwarder port>
+<insert here remote signer ip> remote_signer_port=<insert here remote signer forwarder port> wired_interface_name=eth0 wireless_interface_name=enp1sou1u4
 
 [tezos-remote-signer:vars]
 #ansible_ssh_user=pi

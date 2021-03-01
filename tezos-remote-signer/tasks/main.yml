@@ -121,7 +121,6 @@
     - libgmp-dev
     - m4
     - autossh
-    - cargo
     - python3-flask
     - gunicorn3
     - python3-rpi.gpio
@@ -158,6 +157,30 @@
       udevadm trigger
       udevadm control --reload-rules
 
+      #- name: Check that rustup present
+      #  stat:
+      #    path: /home/tezos/.cargo/bin/rustup
+      #  register: rustup_stat_result
+      #  tags:
+      #    - rust
+      #
+      #- name: install rustup
+      #  shell: |
+      #    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y 
+      #  tags:
+      #    - rust
+      #  become_user: tezos
+      #  when: rustup_stat_result.stat.exists == False 
+      #
+      #- name: install rust
+      #  shell: |
+      #    . $HOME/.cargo/env
+      #    rustup toolchain install 1.44.0
+      #    rustup override set 1.44.0
+      #  tags:
+      #    - rust
+      #  become_user: tezos
+      #
 - import_tasks: "{{ role_path }}/tasks/install_tezos.yml"
   become: yes
   become_user: tezos
