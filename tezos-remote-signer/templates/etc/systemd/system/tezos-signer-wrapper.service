@@ -10,6 +10,8 @@ WorkingDirectory= /usr/lib/python3/tezos-signer-wrapper
 # --preload allows to share the Ledger lock between threads
 ExecStart       = gunicorn3 --bind 0.0.0.0:8443 --threads 2 --preload wsgi:app
 Restart         = on-failure
+Environment     = WIRED_INTERFACE_NAME={{ wired_interface_name }}
+Environment     = WIRELESS_INTERFACE_NAME={{ wireless_interface_name }}
 
 [Install]
 WantedBy        = multi-user.target

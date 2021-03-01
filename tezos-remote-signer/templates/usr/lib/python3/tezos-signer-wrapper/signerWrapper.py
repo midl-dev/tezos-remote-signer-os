@@ -43,9 +43,7 @@ def statusz(pubkey):
     Checks:
     * whether signer daemon is up
     * whether signer daemon knows about the key passed as parameter
-    * whether ledger is connected and unlocked
-    * whether ledger baking app is on
-    * whether baking app is configured to bake for URL passed as parameter
+    * whether ledger is connected
     Returns 200 iif all confitions above are met.
 
     This request locks the daemon, because it interacts with the ledger.
@@ -68,19 +66,17 @@ def statusz(pubkey):
                 print("The Ledger url configured in ~/.tezos-signer does not match the one configured on the cloud")
                 print(f"Value found in ~/.tezos-signer: {signer_conf['value']}, value found in LB request URL: {ledger_url}")
                 return "Ledger URL mismatch, check tezos-signer-forwarder logs on signer", 500
-            ledger_response = subprocess.run(SIGNER_CHECK_ARGS + [ ledger_url ], timeout=10, capture_output=True)
-            return_data = signer_response.content + ledger_response.stdout + ledger_response.stderr, 200 if ledger_response.returncode == 0 else 500
-        else:
-            return_data = signer_response.content, signer_response.status_code
-    return return_data
+    return signer_response.content, signer_response.status_code
 
 @app.route('/healthz')
 def healthz():
     '''
     Health metrics
     '''
-    ping_eth0 = subprocess.run([ "/bin/ping", "-I", "eth0", "-c1", CHECK_IP ], stdout=FNULL)
-    ping_eth1 = subprocess.run([ "/bin/ping", "-I", "eth1", "-c1", CHECK_IP ], stdout=FNULL)
+    wired_interface_name = os.getenv("WIRED_INTERFACE_NAME")
+    wireless_interface_name = os.getenv("WIRELESS_INTERFACE_NAME")
+    ping_wired = subprocess.run([ "/bin/ping", "-I", wired_interface_name, "-c1", CHECK_IP ], stdout=FNULL)
+    ping_wireless = subprocess.run([ "/bin/ping", "-I", wireless_interface_name, "-c1", CHECK_IP ], stdout=FNULL)
     node_exporter_metrics = requests.get('http://localhost:9100/metrics').content.decode("utf-8")
     return """# HELP wired_network Status of the wired network. 0 if it can ping google. 1 if it cannot.
 # TYPE wired_network gauge
@@ -92,7 +88,7 @@ wireless_network %s
 # TYPE power gauge
 power %s
 %s
-""" % (ping_eth0.returncode, ping_eth1.returncode, GPIO.input(6), node_exporter_metrics)
+""" % (ping_wired.returncode, ping_wireless.returncode, GPIO.input(6), node_exporter_metrics)
 
 @app.route('/keys/<pubkey>', methods=['POST'])
 def sign(pubkey):
