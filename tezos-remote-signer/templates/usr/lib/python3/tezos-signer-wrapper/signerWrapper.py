@@ -6,6 +6,7 @@ import subprocess
 from multiprocessing import Lock
 import os
 import json
+import re
 import requests
 import RPi.GPIO as GPIO
 from urllib.parse import quote
@@ -14,12 +15,30 @@ app = Flask(__name__)
 SIGNER_CHECK_ARGS = ["/home/tezos/tezos/tezos-signer", "get", "ledger", "authorized", "path", "for" ]
 CHECK_IP = "8.8.8.8"
 LOCAL_SIGNER_PORT="8442"
+LEDGER_USB_IDENTIFIER=b"2c97:0001"
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(6, GPIO.IN)
 FNULL = open(os.devnull, 'w')
 
 lock = Lock()
+
+def is_ledger_connected_and_unlocked():
+    """
+    From https://stackoverflow.com/a/8265634/207209
+    """
+    device_re = re.compile(b"Bus\s+(?P<bus>\d+)\s+Device\s+(?P<device>\d+).+ID\s(?P<id>\w+:\w+)\s(?P<tag>.+)$", re.I)
+    df = subprocess.check_output("lsusb")
+    devices = []
+    for i in df.split(b'\n'):
+        if i:
+            info = device_re.match(i)
+            if info:
+                dinfo = info.groupdict()
+                dinfo['device'] = '/dev/bus/usb/%s/%s' % (dinfo.pop('bus'), dinfo.pop('device'))
+                devices.append(dinfo)
+            
+    return len([ device for device in devices if device["id"] == LEDGER_USB_IDENTIFIER ]) == 1
 
 # Bug in gunicorn/wsgi. The tezos signer uses chunked encoding which is not handled properly
 # unless you do this.
@@ -43,12 +62,12 @@ def statusz(pubkey):
     Checks:
     * whether signer daemon is up
     * whether signer daemon knows about the key passed as parameter
-    * whether ledger is connected
+    * whether ledger is connected and unlocked
     Returns 200 iif all confitions above are met.
 
-    This request locks the daemon, because it interacts with the ledger.
-    If it's running, we wait for it to complete before we sign anything.
-    Otherwise, signature may fail.
+    We no longer check if ledger is authorized to bake because it tends
+    to freeze the daemon. The locking logic is left here just in case
+    we somehow get 2 concurrent requests or one freezes.
     '''
     with lock:
         # sanitize
@@ -66,6 +85,8 @@ def statusz(pubkey):
                 print("The Ledger url configured in ~/.tezos-signer does not match the one configured on the cloud")
                 print(f"Value found in ~/.tezos-signer: {signer_conf['value']}, value found in LB request URL: {ledger_url}")
                 return "Ledger URL mismatch, check tezos-signer-forwarder logs on signer", 500
+            if not is_ledger_connected_and_unlocked():
+                return "Ledger not connected or not unlocked", 500
     return signer_response.content, signer_response.status_code
 
 @app.route('/healthz')
