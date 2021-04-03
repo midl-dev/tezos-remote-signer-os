@@ -6,8 +6,6 @@
 # Set defaults if not provided by environment
 CHECK_DELAY=${CHECK_DELAY:-5}
 CHECK_IP=${CHECK_IP:-8.8.8.8}
-PRIMARY_IF=${PRIMARY_IF:-eth0}
-BACKUP_IF=${BACKUP_IF:-eth1}
 
 set_def_route_to_primary() {
   # read gateway data from ip command

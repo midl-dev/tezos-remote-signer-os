@@ -10,6 +10,8 @@ After           = network-online.target
 [Service]
 ExecStart       = /usr/bin/isp_failover
 Restart         = on-failure
+Environment     = PRIMARY_IF={{ wired_interface_name }}
+Environment     = BACKUP_IF={{ wireless_interface_name }}
 
 [Install]
 WantedBy        = multi-user.target
