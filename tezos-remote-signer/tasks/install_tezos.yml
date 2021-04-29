@@ -30,10 +30,6 @@
 - debug: msg="{{ tezosinstall.stderr }}"
   when: stat_result.stat.exists == False 
 
-# Generate an OpenSSH keypair with the default values (4096 bits, rsa)
-- openssh_keypair:
-    path: /home/tezos/.ssh/id_rsa
-
 - name: Add tezos bin dir to $PATH for tezos user.
   lineinfile:
     dest: /home/tezos/.bashrc

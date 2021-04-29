@@ -66,6 +66,8 @@ TASK [tezos-remote-signer : Remove the default raspbian user 'pi'] *************
 fatal: [192.168.X.X]: FAILED! => {"changed": false, "msg": "userdel: user pi is currently used by process 992\n", "name": "pi", "rc": 8}
 ```
 
+> If you are running against 64bit raspbian OS beta version, you would have to ssh again and issue a reboot.
+
 At this point, edit your `inventory` file, comment out the following lines:
 
 ```

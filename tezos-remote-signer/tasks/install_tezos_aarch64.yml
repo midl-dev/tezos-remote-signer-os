@@ -1,0 +1,20 @@
+---
+# Install tezos as tezos user
+# on 64bit raspios.
+#
+# Ref:
+#   https://github.com/serokell/tezos-packaging#ubuntu-packages-on-raspberry-pi-os
+
+- name: Install software-properties-common
+  apt:
+    name: software-properties-common
+
+- name: Add tezos repository from PPA and install its signing key
+  apt_repository:
+    repo: ppa:serokell/tezos
+    codename: bionic
+
+- name: Install tezos-signer
+  apt:
+    name: tezos-signer
+    update_cache: yes

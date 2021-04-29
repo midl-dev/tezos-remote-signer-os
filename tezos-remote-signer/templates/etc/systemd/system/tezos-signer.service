@@ -11,7 +11,7 @@ After           = network-online.target
 User            = tezos
 Group           = wheel
 WorkingDirectory= /home/tezos/
-ExecStart       = /home/tezos/tezos/tezos-signer launch http signer -a 127.0.0.1 -p 8442
+ExecStart       = {{ "/usr/bin" if ansible_architecture == "aarch64" else "/home/tezos/tezos" }}/tezos-signer launch http signer -a 127.0.0.1 -p 8442
 Restart         = on-failure
 
 [Install]

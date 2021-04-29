@@ -99,11 +99,17 @@
 - name: Enable ufw
   ufw: state=enabled
 
-- name: download opam
+- name: Download opam install script
   get_url:
-    url: https://github.com/ocaml/opam/releases/download/2.0.7/opam-2.0.7-armhf-linux
-    dest: /usr/local/bin/opam
+    url: https://raw.githubusercontent.com/ocaml/opam/master/shell/install.sh
+    dest: /tmp/opam_install.sh
     mode: '0755'
+
+- name: Run opam install script
+  shell:
+    cmd: yes "" | sudo ./opam_install.sh --fresh
+    chdir: /tmp
+  become: true
 
 - name: install packages
   apt:
@@ -181,7 +187,20 @@
       #    - rust
       #  become_user: tezos
       #
-- import_tasks: "{{ role_path }}/tasks/install_tezos.yml"
+
+- name: Install tezos signer
+  block:
+    - import_tasks: "{{ role_path }}/tasks/install_tezos.yml"
+      when: ansible_architecture != "aarch64"
+
+    - import_tasks: "{{ role_path }}/tasks/install_tezos_aarch64.yml"
+      when: ansible_architecture == "aarch64"
+      become: yes
+      become_user: root
+
+    - name: Generate an OpenSSH keypair with the default values (4096 bits, rsa)
+      openssh_keypair:
+        path: /home/tezos/.ssh/id_rsa
   become: yes
   become_user: tezos
 
