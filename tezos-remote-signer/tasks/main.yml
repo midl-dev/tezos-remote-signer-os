@@ -125,6 +125,15 @@
     - gunicorn3
     - python3-rpi.gpio
 
+- name: Hardcode well known DNS servers instead of ISP ones via DHCP
+  lineinfile:
+    path: /etc/resolvconf.conf
+    regexp: 'name_servers='
+    line: name_servers="8.8.8.8 8.8.4.4 1.1.1.1"
+    backup: yes
+  notify:
+    - Reload resolvconf
+
 # 3 actions below are from https://blog.sleeplessbeastie.eu/2018/12/31/how-to-disable-onboard-wifi-and-bluetooth-on-raspberry-pi-3/
 - name: disable bluetooth , WARNING needs reboot
   lineinfile:
