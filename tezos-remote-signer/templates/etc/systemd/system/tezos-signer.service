@@ -3,7 +3,7 @@
 
 [Unit]
 Description     = Tezos Signer Service
-Documentation     = http://tezos.gitlab.io/betanet/
+Documentation   = http://tezos.gitlab.io/betanet/
 Wants           = network-online.target
 After           = network-online.target
 
@@ -11,7 +11,7 @@ After           = network-online.target
 User            = tezos
 Group           = wheel
 WorkingDirectory= /home/tezos/
-ExecStart       = /home/tezos/tezos/tezos-signer launch http signer -a 127.0.0.1 -p 8442
+ExecStart       = /usr/bin/tezos-signer launch http signer -a 127.0.0.1 -p 8442
 Restart         = on-failure
 
 [Install]

@@ -1,0 +1,4 @@
+---
+# This is a template of confidential vars, fill in and rename it to `tezos-remote-signer-vars.yaml`
+gke_signer_endpoint_hostname: <insert here hostname of remote signer ssh endpoint>
+gke_signer_endpoint_port: <insert here port of remote signer ssh endpoint>

@@ -1,0 +1,33 @@
+---
+# Boostrap remote signer to have tezos as sudoer
+- hosts: tezos-remote-signer
+  become: true
+  tasks:
+    - name: Make sure we have a 'wheel' group
+      group:
+        name: wheel
+        state: present
+
+    - name: Allow 'wheel' group to have passwordless sudo
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        regexp: '^%wheel'
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+
+    - name: Add tezos user
+      user:
+        name: tezos
+        shell: /bin/bash
+        comment: Tezos Remote Signer
+        group: wheel
+
+    - name: Set authorized key taken from file
+      authorized_key:
+        user: tezos
+        state: present
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+    - name: Reboot machine
+      reboot:

@@ -12,10 +12,10 @@ import RPi.GPIO as GPIO
 from urllib.parse import quote
 app = Flask(__name__)
 
-SIGNER_CHECK_ARGS = ["/home/tezos/tezos/tezos-signer", "get", "ledger", "authorized", "path", "for" ]
+SIGNER_CHECK_ARGS = ["/home/tezos/tezos/tezos-signer", "get", "ledger", "authorized", "path", "for"]
 CHECK_IP = "8.8.8.8"
-LOCAL_SIGNER_PORT="8442"
-LEDGER_USB_IDENTIFIER=b"2c97:0001"
+LOCAL_SIGNER_PORT = "8442"
+LEDGER_USB_IDENTIFIER = b"2c97:0001"
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(6, GPIO.IN)
@@ -37,8 +37,8 @@ def is_ledger_connected_and_unlocked():
                 dinfo = info.groupdict()
                 dinfo['device'] = '/dev/bus/usb/%s/%s' % (dinfo.pop('bus'), dinfo.pop('device'))
                 devices.append(dinfo)
-            
-    return len([ device for device in devices if device["id"] == LEDGER_USB_IDENTIFIER ]) == 1
+
+    return len([device for device in devices if device["id"] == LEDGER_USB_IDENTIFIER]) == 1
 
 # Bug in gunicorn/wsgi. The tezos signer uses chunked encoding which is not handled properly
 # unless you do this.
@@ -96,8 +96,8 @@ def healthz():
     '''
     wired_interface_name = os.getenv("WIRED_INTERFACE_NAME")
     wireless_interface_name = os.getenv("WIRELESS_INTERFACE_NAME")
-    ping_wired = subprocess.run([ "/bin/ping", "-I", wired_interface_name, "-c1", CHECK_IP ], stdout=FNULL)
-    ping_wireless = subprocess.run([ "/bin/ping", "-I", wireless_interface_name, "-c1", CHECK_IP ], stdout=FNULL)
+    ping_wired = subprocess.run(["/bin/ping", "-I", wired_interface_name, "-c1", CHECK_IP], stdout=FNULL)
+    ping_wireless = subprocess.run(["/bin/ping", "-I", wireless_interface_name, "-c1", CHECK_IP], stdout=FNULL)
     node_exporter_metrics = requests.get('http://localhost:9100/metrics').content.decode("utf-8")
     return """# HELP wired_network Status of the wired network. 0 if it can ping google. 1 if it cannot.
 # TYPE wired_network gauge
@@ -131,6 +131,5 @@ def catch_all(path):
     if request.method == 'POST':
         signer_response = requests.post('http://localhost:%s/%s' % (LOCAL_SIGNER_PORT, path), json.dumps(request.json))
     else:
-        signer_response = requests.get('http://localhost:%s/%s' % (LOCAL_SIGNER_PORT, path) )
+        signer_response = requests.get('http://localhost:%s/%s' % (LOCAL_SIGNER_PORT, path))
     return  jsonify(json.loads(signer_response.content)), signer_response.status_code
-

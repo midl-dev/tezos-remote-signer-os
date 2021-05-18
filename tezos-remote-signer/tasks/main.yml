@@ -1,228 +1,176 @@
 ---
 # tasks file for tezos-remote-signer
-#
+- name: Setup remote signer hostname
+  hostname:
+    name: tezos-remote-signer
 
-- name: Make sure we have a 'wheel' group
-  group:
-    name: wheel
-    state: present
+- name: Setup user and auth
+  block:
+    - name: Remove the default ubuntu user 'ubuntu'
+      user:
+        name: ubuntu
+        state: absent
+        remove: yes
+      register: ubuntu_user_result
 
-- name: Allow 'wheel' group to have passwordless sudo
-  lineinfile:
-    dest: /etc/sudoers
-    state: present
-    regexp: '^%wheel'
-    line: '%wheel ALL=(ALL) NOPASSWD: ALL'
-    validate: 'visudo -cf %s'
+    - name: Make sure we have a 'wheel' group
+      group:
+        name: wheel
+        state: present
 
-- name: Add sudoers users to wheel group
-  user: name=deployer groups=wheel append=yes state=present createhome=yes
+    - name: Allow 'wheel' group to have passwordless sudo
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        regexp: '^%wheel'
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
 
-- name: Add tezos user
-  user:
-    name: tezos
-    comment: Tezos Remote Signer
-    group: wheel
+    - name: Add tezos user
+      user:
+        name: tezos
+        shell: /bin/bash
+        comment: Tezos Remote Signer
+        group: wheel
 
-- name: Set authorized key taken from file
-  authorized_key:
-    user: tezos
-    state: present
-    key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+    - name: Set authorized key taken from file
+      authorized_key:
+        user: tezos
+        state: present
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
 
-- name: generate key pair
-  openssh_keypair:
-    path: /home/tezos/.ssh/id_rsa
-    owner: tezos
-  register: tezos_keypair
+    - name: Generate key pair
+      openssh_keypair:
+        path: /home/tezos/.ssh/id_rsa
+        owner: tezos
+      register: tezos_keypair
 
-- name: Update apt cache
-  apt: update_cache=yes cache_valid_time=3600
+    - name: Print the pubkey for generated keypair
+      debug:
+        msg: Remote signer succefully configured with public key {{ tezos_keypair.public_key }}
 
-  #- name: Upgrade APT to the latest packages
-  #  apt: upgrade=safe
+    - name: Disallow password authentication
+      lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication no"
+        state: present
+      notify:
+        - Restart ssh
 
-- name: Disallow password authentication
-  lineinfile: dest=/etc/ssh/sshd_config
-              regexp="^PasswordAuthentication"
-              line="PasswordAuthentication no"
-              state=present
-  notify: Restart ssh
+    - name: Disallow root SSH access
+      lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: "^PermitRootLogin"
+        line: "PermitRootLogin no"
+        state: present
+      notify:
+        - Restart ssh
 
-- name: Disallow root SSH access
-  lineinfile: dest=/etc/ssh/sshd_config
-              regexp="^PermitRootLogin"
-              line="PermitRootLogin no"
-              state=present
-  notify: Restart ssh
-
-- name: Remove the default raspbian user 'pi'
-  user:
-    name: pi
-    state: absent
-    remove: yes
-
-- name: Correct iptables version selected to make ufw happy
-  alternatives:
-    name: iptables
-    path: /usr/sbin/iptables-legacy
-
-- name: install packages
+- name: Install packages for remote signer
   apt:
+    name:
+      - vim
+      - ufw
+      - git
+      - libev-dev
+      - rsync 
+      - mercurial
+      - darcs
+      - bubblewrap
+      - libhidapi-dev
+      - libgmp-dev
+      - m4
+      - autossh
+      - gunicorn
+      - python3-flask
+      - python3-rpi.gpio
+    state: present
     update_cache: yes
-    name: "{{ packages }}"
-  vars:
-    packages:
-    - vim
-    - ufw
 
-- name: Configure ufw defaults
-  ufw: direction={{ item.direction }} policy={{ item.policy }}
-  with_items:
-    - { direction: 'incoming', policy: 'deny' }
-    - { direction: 'outgoing', policy: 'allow' }
-  notify:
-    - restart ufw
+- name: Configure and enable ufw 
+  block:
+    - name: Configure ufw defaults
+      ufw:
+        direction: "{{ item.direction }}"
+        policy: "{{ item.policy }}"
+      with_items:
+        - { direction: 'incoming', policy: 'deny' }
+        - { direction: 'outgoing', policy: 'allow' }
+      notify:
+        - Restart ufw
 
-- name: allow inbound ssh only
-  ufw: rule={{ item.rule }} port={{ item.port }} proto={{ item.proto }}
-  with_items:
-    - { rule: 'limit', port: '{{ ssh_port | default("22") }}', proto: 'tcp' }
-  notify:
-    - restart ufw
+    - name: Allow inbound ssh only
+      ufw:
+        rule: "{{ item.rule }}"
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+      with_items:
+        - { rule: 'limit', port: '{{ ssh_port | default("22") }}', proto: 'tcp' }
+      notify:
+        - Restart ufw
 
-- name: Enable ufw logging
-  ufw: logging=on
-  notify:
-    - restart ufw
+    - name: Enable ufw logging
+      ufw:
+        logging: on
+      notify:
+        - Restart ufw
 
-- name: Enable ufw
-  ufw: state=enabled
+    - name: Enable ufw
+      ufw:
+        state: enabled
 
-- name: download opam
-  get_url:
-    url: https://github.com/ocaml/opam/releases/download/2.0.7/opam-2.0.7-armhf-linux
-    dest: /usr/local/bin/opam
-    mode: '0755'
+# Ref: https://github.com/serokell/tezos-packaging#ubuntu-launchpad-ppa-with-tezos--binaries
+- name: Install tezos signer
+  block:
+    - name: Install software-properties-common
+      apt:
+        name: software-properties-common
 
-- name: install packages
-  apt:
-    update_cache: yes
-    name: "{{ packages }}"
-  vars:
-    packages:
-    - git
-    - libev-dev
-    - rsync 
-    - mercurial
-    - darcs
-    - bubblewrap
-    - libhidapi-dev
-    - libgmp-dev
-    - m4
-    - autossh
-    - python3-flask
-    - gunicorn3
-    - python3-rpi.gpio
+    - name: Add tezos repository from PPA and install its signing key
+      apt_repository:
+        repo: ppa:serokell/tezos
 
-# 3 actions below are from https://blog.sleeplessbeastie.eu/2018/12/31/how-to-disable-onboard-wifi-and-bluetooth-on-raspberry-pi-3/
-- name: disable bluetooth , WARNING needs reboot
-  lineinfile:
-    path: /boot/config.txt
-    line: dtoverlay=pi3-disable-bt
+    - name: Install tezos-signer and tezos-client
+      apt:
+        name:
+          - tezos-signer
+          - tezos-client
+        update_cache: yes
 
-- name: disable wifi , WARNING needs reboot
-  lineinfile:
-    path: /boot/config.txt
-    line: dtoverlay=pi3-disable-wifi
+- name: Install and start remote signer services
+  block:
+    - name: Create tezos-signer-wrapper directory
+      file:
+        path: /usr/lib/python3/tezos-signer-wrapper
+        state: directory
+        mode: '0644'
 
-- name: disable uart bluetooth modem service
-  systemd:
-    name: hciuart
-    enabled: no
-    state: stopped
+    - name: Copy all remote signer service files from templates
+      template:
+        src: "{{ item.src }}"
+        dest: "/{{ item.path }}"
+        mode: preserve
+      with_filetree: '../templates'
+      when: item.state == 'file'
 
-- name: disable wpa_supplicant
-  systemd:
-    name: wpa_supplicant
-    enabled: no
-    state: stopped
+    - name: Start and enable remote signer services via systemd
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      with_items:
+        - isp-failover
+        - tezos-signer
+        - tezos-signer-wrapper
+        - tezos-signer-forwarder
 
-- name: print the pubkey
-  debug:
-      msg: Remote signer succefully configured with public key {{ tezos_keypair.public_key }}
-
-- name: reload udev rules so ledger is visible from tezos user
+# Udev rules is copied from above
+- name: Reload udev rules so ledger is visible from tezos user
   shell: |
-      udevadm trigger
-      udevadm control --reload-rules
+    udevadm trigger
+    udevadm control --reload-rules
 
-      #- name: Check that rustup present
-      #  stat:
-      #    path: /home/tezos/.cargo/bin/rustup
-      #  register: rustup_stat_result
-      #  tags:
-      #    - rust
-      #
-      #- name: install rustup
-      #  shell: |
-      #    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y 
-      #  tags:
-      #    - rust
-      #  become_user: tezos
-      #  when: rustup_stat_result.stat.exists == False 
-      #
-      #- name: install rust
-      #  shell: |
-      #    . $HOME/.cargo/env
-      #    rustup toolchain install 1.44.0
-      #    rustup override set 1.44.0
-      #  tags:
-      #    - rust
-      #  become_user: tezos
-      #
-- import_tasks: "{{ role_path }}/tasks/install_tezos.yml"
-  become: yes
-  become_user: tezos
-
-- name: systemd reload the config files
-  systemd:
-    daemon_reload: yes
-
-- name: create tezos-signer-wrapper directory
-  file:
-    path: /usr/lib/python3/tezos-signer-wrapper
-    state: directory
-    mode: '0644'
-
-- name: copy all files from templates
-  template:
-    src: '{{ item.src }}'
-    dest: '/{{ item.path }}'
-    mode: preserve
-  with_filetree: '../templates'
-  when: item.state == 'file'
-
-- name: start isp failover script
-  systemd:
-    name: isp-failover
-    state: started
-    enabled: yes
-
-- name: start tezos signer wrapper
-  systemd:
-    name: tezos-signer-wrapper
-    state: started
-    enabled: yes
-
-- name: start remote signer
-  systemd:
-    name: tezos-signer
-    state: started
-    enabled: yes
-
-- name: start remote signer forwarder
-  systemd:
-    name: tezos-signer-forwarder
-    state: started
-    enabled: yes
+- name: Reboot the remote-signer if this is first time provision
+  reboot:
+  when: ubuntu_user_result.changed
