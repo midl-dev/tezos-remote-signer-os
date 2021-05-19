@@ -49,6 +49,7 @@ Download the ansible dependencies:
 
 ```
 ansible-galaxy install -r requirements.yaml
+ansible-galaxy collection install -r requirements.yaml
 ```
 
 Run the ansible fully automated install:

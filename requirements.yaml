@@ -1,2 +1,4 @@
-# from github
+roles:
 - src: https://github.com/cloudalchemy/ansible-node-exporter
+collections:
+- community.general

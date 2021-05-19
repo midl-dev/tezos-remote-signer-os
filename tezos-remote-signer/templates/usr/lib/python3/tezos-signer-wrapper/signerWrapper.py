@@ -3,7 +3,6 @@
 from flask import Flask, jsonify, request
 from markupsafe import escape
 import subprocess
-from multiprocessing import Lock
 import os
 import json
 import re
@@ -20,8 +19,6 @@ LEDGER_USB_IDENTIFIER=b"2c97:0001"
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(6, GPIO.IN)
 FNULL = open(os.devnull, 'w')
-
-lock = Lock()
 
 def is_ledger_connected_and_unlocked():
     """
@@ -65,28 +62,24 @@ def statusz(pubkey):
     * whether ledger is connected and unlocked
     Returns 200 iif all confitions above are met.
 
-    We no longer check if ledger is authorized to bake because it tends
-    to freeze the daemon. The locking logic is left here just in case
-    we somehow get 2 concurrent requests or one freezes.
     '''
-    with lock:
+    # sanitize
+    pubkey = escape(pubkey)
+    signer_response = requests.get('http://localhost:%s/keys/%s' % (LOCAL_SIGNER_PORT, pubkey))
+    if signer_response:
+        ledger_url = escape(request.args.get('ledger_url'))
         # sanitize
-        pubkey = escape(pubkey)
-        signer_response = requests.get('http://localhost:%s/keys/%s' % (LOCAL_SIGNER_PORT, pubkey))
-        if signer_response:
-            ledger_url = escape(request.args.get('ledger_url'))
-            # sanitize
-            # https://stackoverflow.com/questions/55613607/how-to-sanitize-url-string-in-python
-            ledger_url = quote(ledger_url, safe='/:?&')
-            with open("/home/tezos/.tezos-signer/secret_keys") as json_file:
-                signer_data = json.load(json_file)
-            signer_conf =  next((item for item in signer_data if item["name"] == "ledger_tezos"))
-            if not signer_conf or signer_conf["value"] != ledger_url:
-                print("The Ledger url configured in ~/.tezos-signer does not match the one configured on the cloud")
-                print(f"Value found in ~/.tezos-signer: {signer_conf['value']}, value found in LB request URL: {ledger_url}")
-                return "Ledger URL mismatch, check tezos-signer-forwarder logs on signer", 500
-            if not is_ledger_connected_and_unlocked():
-                return "Ledger not connected or not unlocked", 500
+        # https://stackoverflow.com/questions/55613607/how-to-sanitize-url-string-in-python
+        ledger_url = quote(ledger_url, safe='/:?&')
+        with open("/home/tezos/.tezos-signer/secret_keys") as json_file:
+            signer_data = json.load(json_file)
+        signer_conf =  next((item for item in signer_data if item["name"] == "ledger_tezos"))
+        if not signer_conf or signer_conf["value"] != ledger_url:
+            print("The Ledger url configured in ~/.tezos-signer does not match the one configured on the cloud", flush=True)
+            print(f"Value found in ~/.tezos-signer: {signer_conf['value']}, value found in LB request URL: {ledger_url}", flush=True)
+            return "Ledger URL mismatch, check tezos-signer-forwarder logs on signer", 500
+        if not is_ledger_connected_and_unlocked():
+            return "Ledger not connected or not unlocked", 500
     return signer_response.content, signer_response.status_code
 
 @app.route('/healthz')
@@ -117,9 +110,15 @@ def sign(pubkey):
     This request locks the daemon, because it uses Ledger to sign.
     Healthcheck also uses ledger, and ledger doesn't multiplex.
     '''
-    with lock:
-        signer_response = requests.post('http://localhost:%s/keys/%s' % (LOCAL_SIGNER_PORT, pubkey), json.dumps(request.json))
-    return  jsonify(json.loads(signer_response.content)), signer_response.status_code
+    print(f"Request to sign for key {pubkey} bytes {request.json}")
+    signer_response = requests.post('http://localhost:%s/keys/%s' % (LOCAL_SIGNER_PORT, pubkey), json.dumps(request.json))
+    try:
+        content, status_code = jsonify(json.loads(signer_response.content)), signer_response.status_code
+    except json.decoder.JSONDecodeError:
+        # If signer does not reply proper json, just send whatever we have
+        print("Signer's reply is not valid json: %s" % signer_response.content, flush=True)
+        content, status_code = signer_response.content, signer_response.status_code
+    return content, status_code
 
 @app.route('/', methods=['GET', 'POST'], defaults={'path': ''})
 @app.route('/<path:path>', methods=['GET', 'POST'])
@@ -129,8 +128,15 @@ def catch_all(path):
     Future proof.
     '''
     if request.method == 'POST':
+        print(f"POST request to path {path} with bytes {request.json}", flush = True)
         signer_response = requests.post('http://localhost:%s/%s' % (LOCAL_SIGNER_PORT, path), json.dumps(request.json))
     else:
         signer_response = requests.get('http://localhost:%s/%s' % (LOCAL_SIGNER_PORT, path) )
-    return  jsonify(json.loads(signer_response.content)), signer_response.status_code
+    try:
+        content, status_code = jsonify(json.loads(signer_response.content)), signer_response.status_code
+    except json.decoder.JSONDecodeError:
+        # If signer does not reply proper json, just send whatever we have
+        print("Signer's reply is not valid json: %s" % signer_response.content, flush=True)
+        content, status_code = signer_response.content, signer_response.status_code
+    return content, status_code
 

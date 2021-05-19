@@ -124,6 +124,9 @@
     - python3-flask
     - gunicorn3
     - python3-rpi.gpio
+    - python-dbus
+    - python-networkmanager
+    - libnm-dev
 
 # 3 actions below are from https://blog.sleeplessbeastie.eu/2018/12/31/how-to-disable-onboard-wifi-and-bluetooth-on-raspberry-pi-3/
 - name: disable bluetooth , WARNING needs reboot
@@ -147,6 +150,16 @@
     name: wpa_supplicant
     enabled: no
     state: stopped
+
+- name: configure static ip for failover address because dhcp on the dongle can be crappy
+  community.general.nmcli:
+    conn_name: "{{ wireless_interface_name }}"
+      #ifname: enx0c5b8f279a64
+    type: ethernet
+    method4: manual
+    ip4: 192.168.0.101/24
+    gw4: 192.168.0.1
+    state: present
 
 - name: print the pubkey
   debug:
@@ -226,3 +239,5 @@
     name: tezos-signer-forwarder
     state: started
     enabled: yes
+
+
