@@ -61,14 +61,16 @@ Bootstrap remote signer
 ansible-playbook tezos-remote-signer-bootstrap.yaml -e "ansible_ssh_user=ubuntu" -e "ansible_ssh_pass=<password_you_changed_after first_login>" --inventory-file inventory
 ```
 
-In bootstrap procedure, add the `tezos` user, disable ssh password access, enable public-key ssh authentication as `tezos` user with the public key that is in your `~/.ssh` folder.
+The bootstrap procedure will add the `tezos` user, disable ssh password access, enable public-key ssh authentication as `tezos` user with the public key that is in your `~/.ssh` folder.
 
 Install remote signer services
 ------------------------------
 
-> At the beginning of this step, you need to login manually as `tezos` user and reboot the remote signer.
+> As `ubuntu` is the user to execute the reboot task during remote-signer bootstrap, sshd would still cache the logged in `ubuntu` user after bootstrap.
+>
+> At the beginning of this step, you need to login manually as `tezos` user and reboot the remote signer so `ubuntu` user wouldn't be cached by sshd and can be deleted successfully in the following steps..
 
-It will remove the default `ubuntu` user and install all remote signer services.
+The service installation procedure will remove the default `ubuntu` user and install all remote signer services.
 
 Run the ansible fully automated install:
 
