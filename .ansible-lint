@@ -1,0 +1,4 @@
+skip_list:
+  - deprecated-bare-vars  # Using bare variables is deprecated
+  - no-changed-when  # Commands should not change things if nothing needs doing
+  - no-handler  # Tasks that run when changed should likely be handlers

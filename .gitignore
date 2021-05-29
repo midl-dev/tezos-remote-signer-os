@@ -1,2 +1,6 @@
+# tox venv
+.tox
+
+# local customized file by user
 tezos-remote-signer-vars.yaml
 inventory
