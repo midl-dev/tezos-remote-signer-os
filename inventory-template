@@ -6,3 +6,6 @@
 ansible_ssh_user=tezos
 ansible_sudo=yes
 ansible_ssh_common_args='-o StrictHostKeyChecking=no  -o UserKnownHostsFile=/dev/null'
+# static IP for dongle
+wireless_interface_ip="192.168.0.101/24"
+wireless_interface_gw="192.168.0.1"

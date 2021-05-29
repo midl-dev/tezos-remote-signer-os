@@ -1,5 +1,4 @@
 ---
-
 - hosts: tezos-remote-signer
   become: true
   roles:
