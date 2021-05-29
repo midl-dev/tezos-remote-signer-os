@@ -1,5 +1,14 @@
 ---
 # tasks file for tezos-remote-signer
+
+# unattended-upgrades would cause the signer in reboot required status,
+# which will run into a situation for the signer to reboot from time to time
+- name: Purge unattended-upgrades
+  apt:
+    name: unattended-upgrades
+    state: absent
+    purge: yes
+
 - name: Setup remote signer hostname
   hostname:
     name: tezos-remote-signer
