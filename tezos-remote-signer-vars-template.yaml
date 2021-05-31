@@ -2,3 +2,9 @@
 # This is a template of confidential vars, fill in and rename it to `tezos-remote-signer-vars.yaml`
 gke_signer_endpoint_hostname: <insert here hostname of remote signer ssh endpoint>
 gke_signer_endpoint_port: <insert here port of remote signer ssh endpoint>
+
+# Set import_tezos_ledger to True to allow ansible import tezos ledger for you
+import_tezos_ledger: False
+tezos_ledger_url: ~ # Fill in tezos ledger url to be imported
+tezos_public_key: ~ # Fill in your tezos public key on ledger to be imported
+tezos_public_key_hash: ~ # Fill in your tezos public key hash to be imported

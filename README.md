@@ -110,6 +110,18 @@ Finally you need to set the ledger to bake for this key:
 
 Again you need to approve using the Ledger button.
 
+Import tezos ledger using ansible
+---------------------------------
+
+You can import the tezos using ansible by setting `import_tezos_ledger: True` in `tezos-remote-signer-vars.yaml` with required variables
+
+```yaml
+import_tezos_ledger: True
+tezos_ledger_url: <tezos ledger url to be imported>
+tezos_public_key: <public key on ledger to be imported>
+tezos_public_key_hash: <public key hash to be imported>
+```
+
 Active services
 ===============
 

@@ -165,6 +165,57 @@
         - tezos-signer-wrapper
         - tezos-signer-forwarder
 
+- name: Import tezos-ledger configs
+  block:
+    - name: Create .tezos-client folder
+      file:
+        path: "/home/tezos/.{{item}}"
+        state: directory
+        owner: tezos
+        group: wheel
+        mode: '0755'
+      with_items:
+        - tezos-client
+        - tezos-signer
+
+    - name: Create public_keys file
+      copy:
+        content: |-
+          [ { "name": "{{ ledger_name | default('ledger_tezos') }}",
+              "value":
+                { "locator": "{{ tezos_ledger_url }}",
+                  "key": "{{ tezos_public_key }}" } } ]
+        dest: "/home/tezos/.{{item}}/public_keys"
+        owner: tezos
+        group: wheel
+      with_items:
+        - tezos-client
+        - tezos-signer
+
+    - name: Create public_key_hashs file
+      copy:
+        content: |-
+          [ { "name": "{{ ledger_name | default('ledger_tezos') }}", "value": "{{ tezos_public_key_hash }}" } ]
+        dest: "/home/tezos/.{{item}}/public_key_hashs"
+        owner: tezos
+        group: wheel
+      with_items:
+        - tezos-client
+        - tezos-signer
+
+    - name: Create secret_keys file
+      copy:
+        content: |-
+          [ { "name": "{{ ledger_name | default('ledger_tezos') }}",
+              "value": "{{ tezos_ledger_url }}" } ]
+        dest: "/home/tezos/.{{item}}/secret_keys"
+        owner: tezos
+        group: wheel
+      with_items:
+        - tezos-client
+        - tezos-signer
+  when: import_tezos_ledger
+
 # Udev rules is copied from above
 - name: Reload udev rules so ledger is visible from tezos user
   shell: |
