@@ -52,6 +52,7 @@ Download the ansible dependencies:
 
 ```sh
 ansible-galaxy install -r requirements.yaml
+ansible-galaxy collection install -r requirements.yaml
 ```
 
 Bootstrap remote signer

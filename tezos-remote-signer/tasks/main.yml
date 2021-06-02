@@ -10,8 +10,63 @@
     purge: yes
 
 - name: Setup remote signer hostname
-  hostname:
-    name: tezos-remote-signer
+  block:
+    - name: Setup hostname
+      hostname:
+        name: tezos-remote-signer
+
+    - name: Add hostname to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: 127.0.0.1 tezos-remote-signer
+        insertafter: 127.0.0.1 localhost
+
+# https://docs.ansible.com/ansible/latest/collections/community/general/nmcli_module.html
+- name: Setup static IP for dongle
+  block:
+    - name: Install package for ansible nmcli module
+      apt:
+        name: network-manager
+        state: present
+        update_cache: yes
+
+    - name: Configure network-manager
+      lineinfile:
+        path: /usr/lib/NetworkManager/conf.d/10-globally-managed-devices.conf
+        regex: "^unmanaged-devices="
+        line: unmanaged-devices=*,except:type:ethernet
+      notify:
+        - Restart network-manager
+
+    - name: Configure static IP for dongle
+      community.general.nmcli:
+        conn_name: "{{ wireless_interface_name }}"
+        ifname: "{{ wireless_interface_name }}"
+        type: ethernet
+        method4: manual
+        ip4: "{{ wireless_interface_ip }}"
+        gw4: "{{ wireless_interface_gw }}"
+        state: present
+        autoconnect: yes
+
+- name: Setup resolvconf and dns server
+  block:
+    - name: Install resolvconf
+      apt:
+        name: resolvconf
+        state: present
+        update_cache: yes
+
+    - name: Add public dns server to resolvconf
+      lineinfile:
+        path: /etc/resolvconf/resolv.conf.d/head
+        line: nameserver {{ item }}
+      with_items:
+        - 8.8.8.8
+        - 8.8.4.4
+        - 1.1.1.1
+      notify:
+        - Reload resolvconf
 
 - name: Setup user and auth
   block:

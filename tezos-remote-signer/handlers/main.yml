@@ -10,3 +10,11 @@
   service:
     name: ufw
     state: restarted
+
+- name: Restart network-manager
+  service:
+    name: network-manager
+    state: restarted
+
+- name: Reload resolvconf
+  command: resolvconf -u
