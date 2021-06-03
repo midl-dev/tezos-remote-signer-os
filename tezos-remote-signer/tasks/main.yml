@@ -13,12 +13,12 @@
   block:
     - name: Setup hostname
       hostname:
-        name: tezos-remote-signer
+        name: "{{ signer_hostname | default('tezos-remote-signer') }}"
 
     - name: Add hostname to /etc/hosts
       lineinfile:
         path: /etc/hosts
-        line: 127.0.0.1 tezos-remote-signer
+        line: 127.0.0.1 {{ signer_hostname | default('tezos-remote-signer') }}
         insertafter: 127.0.0.1 localhost
 
 # https://docs.ansible.com/ansible/latest/collections/community/general/nmcli_module.html
