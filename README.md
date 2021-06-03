@@ -114,7 +114,7 @@ Again you need to approve using the Ledger button.
 Import tezos ledger using ansible
 ---------------------------------
 
-You can import the tezos using ansible by setting `import_tezos_ledger: True` in `tezos-remote-signer-vars.yaml` with required variables
+You can import the tezos signer configuration using ansible by setting `import_tezos_ledger: True` in `tezos-remote-signer-vars.yaml` with required variables
 
 ```yaml
 import_tezos_ledger: True
@@ -122,6 +122,8 @@ tezos_ledger_url: <tezos ledger url to be imported>
 tezos_public_key: <public key on ledger to be imported>
 tezos_public_key_hash: <public key hash to be imported>
 ```
+
+This way, there is no need to run the command `tezos-client import secret key` to add the Ledger's address to the signer's known addresses.
 
 Active services
 ===============
