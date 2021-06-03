@@ -233,7 +233,7 @@
   block:
     - name: Create .tezos-client folder
       file:
-        path: "/home/tezos/.{{item}}"
+        path: "/home/tezos/.{{ item }}"
         state: directory
         owner: tezos
         group: wheel
@@ -249,9 +249,10 @@
               "value":
                 { "locator": "{{ tezos_ledger_url }}",
                   "key": "{{ tezos_public_key }}" } } ]
-        dest: "/home/tezos/.{{item}}/public_keys"
+        dest: "/home/tezos/.{{ item }}/public_keys"
         owner: tezos
         group: wheel
+        mode: '0644'
       with_items:
         - tezos-client
         - tezos-signer
@@ -260,9 +261,10 @@
       copy:
         content: |-
           [ { "name": "{{ ledger_name | default('ledger_tezos') }}", "value": "{{ tezos_public_key_hash }}" } ]
-        dest: "/home/tezos/.{{item}}/public_key_hashs"
+        dest: "/home/tezos/.{{ item }}/public_key_hashs"
         owner: tezos
         group: wheel
+        mode: '0644'
       with_items:
         - tezos-client
         - tezos-signer
@@ -272,9 +274,10 @@
         content: |-
           [ { "name": "{{ ledger_name | default('ledger_tezos') }}",
               "value": "{{ tezos_ledger_url }}" } ]
-        dest: "/home/tezos/.{{item}}/secret_keys"
+        dest: "/home/tezos/.{{ item }}/secret_keys"
         owner: tezos
         group: wheel
+        mode: '0644'
       with_items:
         - tezos-client
         - tezos-signer
