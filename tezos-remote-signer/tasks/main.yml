@@ -103,6 +103,26 @@
         state: present
         key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
 
+    - name: Add authorized keys from tezos_auth_keys
+      authorized_key:
+        user: tezos
+        state: present
+        key: "{{ item }}"
+      with_items: "{{ tezos_auth_keys }}"
+      when:
+        - tezos_auth_keys is defined
+        - tezos_auth_keys | length > 0
+
+    - name: Add known_host keys for tezos know_hosts
+      known_hosts:
+        name: "{{ item.host }}"
+        key:  "{{ item.host }} {{ item.key }}"
+        path: /home/tezos/.ssh/known_hosts
+      with_items: "{{ tezos_known_hosts }}"
+      when:
+        - tezos_known_hosts is defined
+        - tezos_known_hosts | length > 0
+
     - name: Generate key pair
       openssh_keypair:
         path: /home/tezos/.ssh/id_rsa

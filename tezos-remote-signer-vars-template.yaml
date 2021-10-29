@@ -11,3 +11,18 @@ import_tezos_ledger: False
 tezos_ledger_url: ~ # Fill in tezos ledger url to be imported
 tezos_public_key: ~ # Fill in your tezos public key on ledger to be imported
 tezos_public_key_hash: ~ # Fill in your tezos public key hash to be imported
+
+# Additional authorized keys for tezos user
+tezos_auth_keys: []
+# tezos_auth_keys:
+#   - "key1"
+#   - "key2"
+#   - "key3"
+
+# Know hosts keys for tezos user
+tezos_known_hosts: []
+# tezos_known_hosts:
+#   - host: "[host1]:port1"
+#     key: "key1"
+#   - host: "[host2]:port2"
+#     key: "key2"
