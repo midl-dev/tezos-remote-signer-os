@@ -16,7 +16,7 @@ app = Flask(__name__)
 #                      "get", "ledger", "authorized", "path", "for"]
 CHECK_IP = "8.8.8.8"
 LOCAL_SIGNER_PORT = "8442"
-LEDGER_USB_IDENTIFIER = b"2c97:0001"
+LEDGER_USB_IDENTIFIERS = [ b"2c97:0001", b"2c97:0005" ]
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(6, GPIO.IN)
@@ -43,7 +43,7 @@ def is_ledger_connected_and_unlocked():
                 dinfo['device'] = f"/dev/bus/usb/{bus_info}/{device_info}"
                 devices.append(dinfo)
 
-    return len([d for d in devices if d["id"] == LEDGER_USB_IDENTIFIER]) == 1
+    return len([d for d in devices if d["id"] in LEDGER_USB_IDENTIFIERS]) == 1
 
 
 # Bug in gunicorn/wsgi. The tezos signer uses chunked encoding which is
