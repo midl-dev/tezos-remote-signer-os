@@ -23,16 +23,7 @@
         comment: Tezos Remote Signer
         group: wheel
 
-    - name: Set authorized key taken from file
-      authorized_key:
-        user: tezos
-        state: present
-        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
-
     - name: Update all packages to their latest version
       apt:
         name: "*"
         state: latest
-
-    - name: Reboot machine
-      reboot:

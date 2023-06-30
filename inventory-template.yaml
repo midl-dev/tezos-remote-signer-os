@@ -1,0 +1,47 @@
+tezos_remote_signer:
+  hosts:
+    localhost:
+      ansible_host: /tmp/tezos_signer_chroot
+      ansible_connection: chroot
+
+      # Configure the hostname & port of the cloud-based tunnel endoint
+      signer_endpoint_hostname: endpoint.acme.corp
+      signer_endpoint_port: 54389
+      # The public key of the ssh tunel endpoint host key
+      # This is not the key used for connecting to the tunnel!
+      signer_endpoint_host_pubkey: "ecdsa-sha2-nistp256 AAAAE2xxxx"
+
+      # Hostname of your signer
+      signer_hostname: tezos-signer-dictator
+
+      # The remote signer port being tunneled. In case of HA setup, it's fine for both signers to have the same port.
+      remote_signer_port: 8443
+      
+
+      # Set import_tezos_ledger to True to allow ansible import tezos ledger for you
+      import_tezos_ledger: False
+      # Set to true to also import a payout key.
+      import_tezos_ledger_and_payout: True
+
+      tezos_ledger_url: ledger://aaa-bbb-ccc-ddd/ed25519/0h/0h
+      tezos_public_key: edpkxxx
+      tezos_public_key_hash: tz1xxxx
+      tezos_payout_public_key_hash: tz1yyyy
+      tezos_payout_public_key: edpkyyy
+      # Payout key is in a hot wallet, set private key below. CAUTION: sensitive.
+      tezos_payout_secret_key: edskyyy
+
+      # The keys allowed to ssh to the tunnel as `tezos` user for debugging
+      tezos_auth_keys:
+      - ssh-rsa AAAAxxx
+      - ssh-rsa AAAAyyy
+
+      # Below the key pair used by the signer to connect to the cloud-based tunnel endpoint.
+      # Public key must be configured in the endpoint as well.
+      # Must be a RSA key for now.
+      signer_pubkey:
+        ssh-rsa AAAAzzzz
+      signer_privkey: |
+        -----BEGIN OPENSSH PRIVATE KEY-----
+        private key goes here
+        -----END OPENSSH PRIVATE KEY-----

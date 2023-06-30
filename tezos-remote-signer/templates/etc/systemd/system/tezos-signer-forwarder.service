@@ -6,8 +6,7 @@ Description           = Tezos Signer Forwarder Service, forwards tezos-signer to
 Documentation         = http://tezos.gitlab.io/betanet/
 Wants                 = network-online.target
 After                 = network-online.target
-StartLimitBurst       = 5
-StartLimitIntervalSec = 33
+StartLimitIntervalSec = 0
 
 
 [Service]
@@ -20,7 +19,7 @@ WorkingDirectory= /home/tezos/
 # -N do only port forwarding, don't require remote terminal
 # -T disable local pseudo-terminal allocation
 # -R REMOTEPORT:localhost:LOCALPORT : make local port LOCALPORT reachable remotely on REMOTEPORT
-ExecStart       = /usr/bin/autossh -p {{ gke_signer_endpoint_port }} -N -T -R {{ remote_signer_port }}:127.0.0.1:8443 -R {{ remote_signer_port + 1000 }}:127.0.0.1:22 signer@{{ gke_signer_endpoint_hostname }}
+ExecStart       = /usr/bin/autossh -o ExitOnForwardFailure=yes -p {{ signer_endpoint_port }} -N -T -R {{ remote_signer_port }}:127.0.0.1:8443 -R {{ remote_signer_port + 1000 }}:127.0.0.1:22 signer@{{ signer_endpoint_hostname }}
 # poll the ssh connection every 15 secs to be on the safe side (even one minute can be fatal)
 Environment     = AUTOSSH_POLL=15
 Restart         = on-failure

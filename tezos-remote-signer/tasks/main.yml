@@ -21,34 +21,6 @@
         line: 127.0.0.1 {{ signer_hostname | default('tezos-remote-signer') }}
         insertafter: 127.0.0.1 localhost
 
-# https://docs.ansible.com/ansible/latest/collections/community/general/nmcli_module.html
-- name: Setup static IP for dongle
-  block:
-    - name: Install package for ansible nmcli module
-      apt:
-        name: network-manager
-        state: present
-        update_cache: yes
-
-    - name: Configure network-manager
-      lineinfile:
-        path: /usr/lib/NetworkManager/conf.d/10-globally-managed-devices.conf
-        regex: "^unmanaged-devices="
-        line: unmanaged-devices=*,except:type:ethernet
-      notify:
-        - Restart network-manager
-
-    - name: Configure static IP for dongle
-      community.general.nmcli:
-        conn_name: "{{ wireless_interface_name }}"
-        ifname: "{{ wireless_interface_name }}"
-        type: ethernet
-        method4: manual
-        ip4: "{{ wireless_interface_ip }}"
-        gw4: "{{ wireless_interface_gw }}"
-        state: present
-        autoconnect: yes
-
 - name: Setup resolvconf and dns server
   block:
     - name: Install resolvconf
@@ -65,44 +37,9 @@
         - 8.8.8.8
         - 8.8.4.4
         - 1.1.1.1
-      notify:
-        - Reload resolvconf
 
 - name: Setup user and auth
   block:
-    - name: Remove the default ubuntu user 'ubuntu'
-      user:
-        name: ubuntu
-        state: absent
-        remove: yes
-      register: ubuntu_user_result
-
-    - name: Make sure we have a 'wheel' group
-      group:
-        name: wheel
-        state: present
-
-    - name: Allow 'wheel' group to have passwordless sudo
-      lineinfile:
-        dest: /etc/sudoers
-        state: present
-        regexp: '^%wheel'
-        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
-        validate: 'visudo -cf %s'
-
-    - name: Add tezos user
-      user:
-        name: tezos
-        shell: /bin/bash
-        comment: Tezos Remote Signer
-        group: wheel
-
-    - name: Set authorized key taken from file
-      authorized_key:
-        user: tezos
-        state: present
-        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
-
     - name: Add authorized keys from tezos_auth_keys
       authorized_key:
         user: tezos
@@ -113,25 +50,25 @@
         - tezos_auth_keys is defined
         - tezos_auth_keys | length > 0
 
-    - name: Add known_host keys for tezos know_hosts
+    - name: Add known_host keys for tezos known_hosts
       known_hosts:
-        name: "{{ item.host }}"
-        key:  "{{ item.host }} {{ item.key }}"
+        name: "[{{ signer_endpoint_hostname }}]:{{ signer_endpoint_port }}"
+        key:  "[{{ signer_endpoint_hostname }}]:{{ signer_endpoint_port }} {{ signer_endpoint_host_pubkey }}"
         path: /home/tezos/.ssh/known_hosts
-      with_items: "{{ tezos_known_hosts }}"
-      when:
-        - tezos_known_hosts is defined
-        - tezos_known_hosts | length > 0
 
-    - name: Generate key pair
-      openssh_keypair:
-        path: /home/tezos/.ssh/id_rsa
+    - name: Install ssh key
+      copy: 
+        content: "{{ signer_privkey }}"
+        dest: /home/tezos/.ssh/id_rsa
+        mode: 0600
         owner: tezos
-      register: tezos_keypair
 
-    - name: Print the pubkey for generated keypair
-      debug:
-        msg: Remote signer succefully configured with public key {{ tezos_keypair.public_key }}
+    - name: Install ssh pub key
+      copy: 
+        content: "{{ signer_pubkey }}"
+        dest: /home/tezos/.ssh/id_rsa.pub
+        mode: 0600
+        owner: tezos
 
     - name: Disallow password authentication
       lineinfile:
@@ -139,70 +76,23 @@
         regexp: "^PasswordAuthentication"
         line: "PasswordAuthentication no"
         state: present
-      notify:
-        - Restart ssh
 
-    - name: Disallow root SSH access
-      lineinfile:
-        dest: /etc/ssh/sshd_config
-        regexp: "^PermitRootLogin"
-        line: "PermitRootLogin no"
-        state: present
-      notify:
-        - Restart ssh
+    - name: Ensure cloud-init does not reenable password auth
+      ansible.builtin.file:
+        state: absent
+        path: /etc/ssh/sshd_config.d/50-cloud-init.conf
 
 - name: Install packages for remote signer
   apt:
     name:
       - vim
-      - ufw
-      - git
-      - libev-dev
       - rsync 
-      - mercurial
-      - darcs
-      - bubblewrap
-      - libhidapi-dev
-      - libgmp-dev
-      - m4
       - autossh
       - gunicorn
       - python3-flask
       - python3-rpi.gpio
     state: present
     update_cache: yes
-
-- name: Configure and enable ufw 
-  block:
-    - name: Configure ufw defaults
-      ufw:
-        direction: "{{ item.direction }}"
-        policy: "{{ item.policy }}"
-      with_items:
-        - { direction: 'incoming', policy: 'deny' }
-        - { direction: 'outgoing', policy: 'allow' }
-      notify:
-        - Restart ufw
-
-    - name: Allow inbound ssh only
-      ufw:
-        rule: "{{ item.rule }}"
-        port: "{{ item.port }}"
-        proto: "{{ item.proto }}"
-      with_items:
-        - { rule: 'limit', port: '{{ ssh_port | default("22") }}', proto: 'tcp' }
-      notify:
-        - Restart ufw
-
-    - name: Enable ufw logging
-      ufw:
-        logging: on
-      notify:
-        - Restart ufw
-
-    - name: Enable ufw
-      ufw:
-        state: enabled
 
 # Ref: https://github.com/serokell/tezos-packaging#ubuntu-launchpad-ppa-with-tezos--binaries
 - name: Install tezos signer
@@ -241,10 +131,8 @@
     - name: Start and enable remote signer services via systemd
       systemd:
         name: "{{ item }}"
-        state: started
         enabled: yes
       with_items:
-        - isp-failover
         - tezos-signer
         - tezos-signer-wrapper
         - tezos-signer-forwarder
@@ -303,12 +191,63 @@
         - tezos-signer
   when: import_tezos_ledger
 
-# Udev rules is copied from above
-- name: Reload udev rules so ledger is visible from tezos user
-  shell: |
-    udevadm trigger
-    udevadm control --reload-rules
+- name: Import tezos-ledger and payout configs
+  block:
+    - name: Create .tezos-client folder
+      file:
+        path: "/home/tezos/.{{ item }}"
+        state: directory
+        owner: tezos
+        group: wheel
+        mode: '0755'
+      with_items:
+        - tezos-client
+        - tezos-signer
 
-- name: Reboot the remote-signer if this is first time provision
-  reboot:
-  when: ubuntu_user_result.changed
+    - name: Create public_keys file
+      copy:
+        content: |-
+          [ { "name": "{{ ledger_name | default('ledger_tezos') }}",
+              "value":
+                { "locator": "{{ tezos_ledger_url }}",
+                  "key": "{{ tezos_public_key }}" } },
+          { "name": "payout",
+              "value":
+                { "locator": "unencrypted:{{ tezos_payout_public_key }}",
+                  "key": "{{ tezos_payout_public_key }}" } } ]
+        dest: "/home/tezos/.{{ item }}/public_keys"
+        owner: tezos
+        group: wheel
+        mode: '0644'
+      with_items:
+        - tezos-client
+        - tezos-signer
+
+    - name: Create public_key_hashs file
+      copy:
+        content: |-
+          [ { "name": "{{ ledger_name | default('ledger_tezos') }}", "value": "{{ tezos_public_key_hash }}" },
+          { "name": "payout", "value": "{{ tezos_payout_public_key_hash }}" } ]
+        dest: "/home/tezos/.{{ item }}/public_key_hashs"
+        owner: tezos
+        group: wheel
+        mode: '0644'
+      with_items:
+        - tezos-client
+        - tezos-signer
+
+    - name: Create secret_keys file
+      copy:
+        content: |-
+          [ { "name": "{{ ledger_name | default('ledger_tezos') }}",
+              "value": "{{ tezos_ledger_url }}" },
+          { "name": "payout",
+          "value": "unencrypted:{{ tezos_payout_secret_key }}" } ]
+        dest: "/home/tezos/.{{ item }}/secret_keys"
+        owner: tezos
+        group: wheel
+        mode: '0644'
+      with_items:
+        - tezos-client
+        - tezos-signer
+  when: import_tezos_ledger_and_payout

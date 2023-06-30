@@ -113,29 +113,10 @@ def healthz():
     '''
     Health metrics
     '''
-    wired_interface_name = os.getenv("WIRED_INTERFACE_NAME")
-    wireless_interface_name = os.getenv("WIRELESS_INTERFACE_NAME")
-    ping_wired = subprocess.run(
-        ["/bin/ping", "-I", wired_interface_name, "-c1", CHECK_IP],
-        stdout=FNULL
-    )
-    ping_wireless = subprocess.run(
-        ["/bin/ping", "-I", wireless_interface_name, "-c1", CHECK_IP],
-        stdout=FNULL
-    )
     node_exporter_metrics = requests.get('http://localhost:9100/metrics').\
         content.decode("utf-8")
 
     health_msg = f"""
-# HELP wired_network Status of the wired network.
-# 0 if it can ping google. 1 if it cannot.
-# TYPE wired_network gauge
-wired_network {ping_wired.returncode}
-
-# HELP wireless_network Status of the 4g backup connection.
-# TYPE wireless_network gauge
-wireless_network {ping_wireless.returncode}
-
 # HELP power state of the wall power for the signer.
 # 0 means that it has wall power, anything else means it is on battery.
 # TYPE power gauge

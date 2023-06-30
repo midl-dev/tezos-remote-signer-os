@@ -1,5 +1,3 @@
 ---
 roles:
-  - src: https://github.com/cloudalchemy/ansible-node-exporter
-collections:
-  - name: community.general
+  - role: geerlingguy.node_exporter

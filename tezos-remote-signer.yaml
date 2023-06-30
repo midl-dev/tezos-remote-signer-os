@@ -1,6 +1,6 @@
 ---
-- hosts: tezos-remote-signer
+- hosts: tezos_remote_signer
   become: true
   roles:
     - tezos-remote-signer
-    - ansible-node-exporter
+    - node_exporter
