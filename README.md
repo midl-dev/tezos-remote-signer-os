@@ -55,7 +55,7 @@ sudo packer build -var 'inventory_file=path/to/inventory.yaml' tezos_signer.pkr.
 ## Burn image
 
 ```
-sudo dd if=tezos-signer.img of=/dev/sdb status=progress
+sudo dd if=inventory.yaml-rpi-sd-card.img of=/dev/sdb status=progress
 ```
 
 Note: make sure that your card is mounted as `/dev/sdb` or adapt the command.
